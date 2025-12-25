@@ -1,0 +1,8 @@
+{
+  "name": "Lex OCR",
+  "description": "Полностью бесплатный Open Source инструмент для распознавания текста. Некоммерческий проект. Автор: Андреев Иван.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

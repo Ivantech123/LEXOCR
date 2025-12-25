@@ -1,0 +1,202 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>Lex OCR</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['SF Pro Display', '-apple-system', 'BlinkMacSystemFont', 'Inter', 'Roboto', 'sans-serif'],
+            },
+            colors: {
+              surface: {
+                light: '#fdf7ff',
+                dark: '#141218',
+              }
+            },
+            spacing: {
+               'safe-top': 'env(safe-area-inset-top)',
+               'safe-bottom': 'env(safe-area-inset-bottom)',
+            },
+            animation: {
+              'float': 'float 8s ease-in-out infinite',
+              'draw': 'draw 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards',
+              'liquid-pulse': 'liquidPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+              'pop-in': 'pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+              'spring-up': 'springUpBig 0.5s cubic-bezier(0.19, 1, 0.22, 1) forwards',
+              'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+              'scale-in-bounce': 'scaleInBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              'slide-up': 'slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards',
+            },
+            keyframes: {
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-15px)' },
+              },
+              draw: {
+                '0%': { strokeDasharray: '100', strokeDashoffset: '100', opacity: '0' },
+                '1%': { opacity: '1' }, 
+                '100%': { strokeDasharray: '100', strokeDashoffset: '0', opacity: '1' }
+              },
+              liquidPulse: {
+                '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                '50%': { opacity: '0.8', transform: 'scale(0.95)' }
+              },
+              'pop-in': {
+                '0%': { opacity: '0', transform: 'scale(0.9) translateY(10px)' },
+                '100%': { opacity: '1', transform: 'scale(1) translateY(0)' }
+              },
+              springUpBig: {
+                '0%': { transform: 'translateY(60px) scale(0.95)', opacity: '0' },
+                '100%': { transform: 'translateY(0) scale(1)', opacity: '1' }
+              },
+              slideInRight: {
+                '0%': { opacity: '0', transform: 'translateX(30px)' },
+                '100%': { opacity: '1', transform: 'translateX(0)' }
+              },
+              slideUp: {
+                '0%': { transform: 'translateY(100%)', opacity: '0' },
+                '100%': { transform: 'translateY(0)', opacity: '1' }
+              },
+              scaleInBounce: {
+                '0%': { opacity: '0', transform: 'scale(0.8)' },
+                '70%': { transform: 'scale(1.05)' },
+                '100%': { transform: 'scale(1); opacity: 1;' }
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Merriweather:wght@300;400;700&display=swap" rel="stylesheet">
+    
+    <!-- Google API Scripts for Drive Picker -->
+    <script async defer src="https://apis.google.com/js/api.js"></script>
+    <script async defer src="https://accounts.google.com/gsi/client"></script>
+
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+      html, body, #root {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; 
+        overscroll-behavior: none;
+      }
+      
+      body {
+        font-family: 'SF Pro Display', 'Inter', -apple-system, sans-serif;
+        background-color: #f2f2f7;
+        color: #1d1b20;
+        transition: background-color 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+        padding-top: env(safe-area-inset-top);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .dark body {
+        background-color: #000000;
+        color: #ffffff;
+      }
+
+      /* GPU Acceleration Classes */
+      .gpu {
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+      }
+      
+      .will-change-transform {
+        will-change: transform;
+      }
+
+      /* --- LIQUID GLASS MATERIAL --- */
+      .ios-glass {
+        background: rgba(255, 255, 255, 0.65);
+        backdrop-filter: blur(20px) saturate(180%);
+        -webkit-backdrop-filter: blur(20px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.4);
+        box-shadow: 
+          0 8px 32px 0 rgba(31, 38, 135, 0.07),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+      }
+      
+      .dark .ios-glass {
+        background: rgba(20, 20, 20, 0.60);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 
+          0 8px 32px 0 rgba(0, 0, 0, 0.3),
+          inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+      }
+
+      /* --- SF SYMBOLS DRAW ANIMATION --- */
+      .icon-animate path,
+      .icon-animate circle,
+      .icon-animate rect,
+      .icon-animate line,
+      .icon-animate polyline {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: draw 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      
+      /* Hover State for Icons */
+      .icon-hover-trigger:hover svg {
+        transform: scale(1.1);
+        filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.4));
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        will-change: transform;
+      }
+      
+      .icon-hover-trigger:active svg {
+        transform: scale(0.9);
+      }
+
+      /* --- LIQUID CONTROLS --- */
+      .liquid-button {
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s;
+        will-change: transform;
+      }
+      .liquid-button:active {
+        transform: scale(0.94);
+      }
+
+      /* Custom scrollbar */
+      ::-webkit-scrollbar { width: 0px; background: transparent; }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      
+      /* Viewport height fix for mobile browsers */
+      .h-dvh {
+        height: 100dvh;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.4",
+    "@supabase/supabase-js": "https://aistudiocdn.com/@supabase/supabase-js@^2.47.16"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="./index.tsx"></script>
+</body>
+</html>
